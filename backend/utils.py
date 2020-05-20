@@ -79,7 +79,7 @@ def evaluate(image, extract_model, decoder, encoder, tokenizer, max_length, ):
 
     dec_input = tf.expand_dims([tokenizer.word_index['<start>']], 0)
     result = []
-
+    
     for i in range(max_length):
         predictions, hidden, attention_weights = decoder(dec_input, features, hidden)
 

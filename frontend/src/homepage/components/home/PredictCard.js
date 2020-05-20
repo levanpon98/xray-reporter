@@ -32,7 +32,6 @@ function PredictCard(props) {
                       alignContent='center'
                       justify='center'
                 >
-
                     <Zoom zoomMargin={40}>
                         <img
                             alt="that wanaka tree"

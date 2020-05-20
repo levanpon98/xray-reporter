@@ -16,6 +16,7 @@ cors = CORS(app, resources={
         'origins': '*'
     }
 })
+
 model = utils.get_model()
 
 
