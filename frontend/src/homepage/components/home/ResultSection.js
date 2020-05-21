@@ -55,16 +55,26 @@ function ResultSection(props) {
                 <div className="container-fluid">
                     <Grid
                         container
+
                         spacing={calculateSpacing(width)}
                         justify='center'
-                        alignItems='center'>
+                        alignItems='center'
+
+                    >
                         <Grid item xs={12} sm={6}>
                             <DropzoneDialogExample
                                 className={classes.extraLargeButton}
                                 classes={{label: classes.extraLargeButtonLabel}}
                             />
                         </Grid>
-                        {renderData(things)}
+                        <Grid
+                            container
+                            spacing={3}
+                            justify='center'
+
+                            alignItems='center'>
+                                {renderData(things)}
+                        </Grid>
                     </Grid>
                 </div>
             </div>

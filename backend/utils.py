@@ -54,8 +54,6 @@ def preprocess_image(image):
         image = np.dstack([image] * 3)
     else:
         image = image[:, :, :3]
-
-    image = tf.keras.applications.inception_resnet_v2.preprocess_input(image)
     return image
 
 
@@ -71,7 +69,7 @@ def encode_image(image):
 def evaluate(image, extract_model, decoder, encoder, tokenizer, max_length, ):
     hidden = decoder.reset_state(batch_size=1)
 
-    temp_input = tf.expand_dims(preprocess_image(image), 0)
+    temp_input = tf.expand_dims(image, 0)
     img_tensor_val = extract_model(temp_input)
     img_tensor_val = tf.reshape(img_tensor_val, (img_tensor_val.shape[0], -1, img_tensor_val.shape[3]))
 
@@ -87,7 +85,7 @@ def evaluate(image, extract_model, decoder, encoder, tokenizer, max_length, ):
         result.append(tokenizer.index_word[predicted_id])
 
         if tokenizer.index_word[predicted_id] == '<end>':
-            return result
+            return result[:-1]
 
         dec_input = tf.expand_dims([predicted_id], 0)
 

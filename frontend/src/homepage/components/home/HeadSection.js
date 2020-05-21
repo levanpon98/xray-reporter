@@ -11,7 +11,7 @@ import {
     withWidth,
     isWidthUp
 } from "@material-ui/core";
-import headerImage from "../../dummy_data/images/headerImage.jpg";
+import headerImage from "../../dummy_data/images/ezgif.com-video-to-gif.gif";
 import WaveBorder from "../../../shared/components/WaveBorder";
 import DropzoneDialogExample from "../../../shared/components/DropzoneDialogExample";
 
@@ -125,7 +125,7 @@ function HeadSection(props) {
                                                 <Typography
                                                     variant={isWidthUp("lg", width) ? "h3" : "h4"}
                                                 >
-                                                    Covid-19 Disease Identification System using Deep Learning
+                                                   A System to Describe X-ray Images Using Deep Learning
                                                 </Typography>
                                             </Box>
                                             <div>
@@ -134,7 +134,7 @@ function HeadSection(props) {
                                                         variant={isWidthUp("lg", width) ? "h6" : "body1"}
                                                         color="textSecondary"
                                                     >
-                                                        You can upload your X-ray image to our system and determine whether you are positive with Covid-19
+                                                        You can upload your X-ray image to our system get a description of X-ray image
                                                     </Typography>
                                                 </Box>
 
