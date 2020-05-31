@@ -39,7 +39,7 @@ export default class DropzoneDialogExample extends Component {
             formData.append('images[]', file)
         })
 
-        xhr.open('POST', 'http://34.83.75.42/predict', true)
+        xhr.open('POST', 'http://localhost:5000/predict', true)
 
         xhr.onload = () => {
             const data = JSON.parse(xhr.responseText);
