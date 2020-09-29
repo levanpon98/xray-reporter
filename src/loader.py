@@ -47,8 +47,7 @@ def load_data(data_path):
     train_images, valid_images, train_texts, valid_texts, all_text = load_csv(data_path)
 
     tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=config.top_k,
-                                                      oov_token="<unk>",
-                                                      filters='!"#$%&()*+.,-/:;=?@[\]^_`{|}~ ')
+                                                      oov_token="<unk>")
 
     tokenizer.fit_on_texts(all_text)
     tokenizer.word_index['<pad>'] = 0
