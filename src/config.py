@@ -1,5 +1,5 @@
-image_width = 299
-image_height = 299
+image_width = 300
+image_height = 300
 image_channels = 3
 BATCH_SIZE = 8
 BUFFER_SIZE = 1000

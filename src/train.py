@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
         with tf.GradientTape() as tape:
             features = encoder(img_tensor)
-            exit()
+
             for i in range(1, target.shape[1]):
                 # passing the features through the decoder
                 predictions, hidden, _ = decoder(dec_input, features, hidden)
@@ -61,7 +61,7 @@ if __name__ == '__main__':
                 dec_input = tf.expand_dims(target[:, i], 1)
 
         total_loss = (loss / int(target.shape[1]))
-
+ 
         trainable_variables = encoder.trainable_variables + decoder.trainable_variables
 
         gradients = tape.gradient(loss, trainable_variables)
