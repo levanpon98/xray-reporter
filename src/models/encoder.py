@@ -14,11 +14,7 @@ class Encoder(tf.keras.Model):
         self.fc = tf.keras.layers.Dense(embedding_dim)
 
     def call(self, x, training=None):
-        self.extract.summary()
-        exit()
         x = self.extract(x)
-        print(x)
-        exit()
         x = tf.reshape(x, (x.shape[0], -1, x.shape[3]))
         x = self.fc(x, training=training)
         x = tf.nn.relu(x)
