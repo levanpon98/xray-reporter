@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.applications import EfficientNetB3
 
-from src import config
+import config
 
 
 class Encoder(tf.keras.Model):

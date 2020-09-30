@@ -9,5 +9,5 @@ top_k = 5000
 vocab_size = top_k + 1
 features_shape = 2048
 attention_features_shape = 64
-data_path = '/home/levanpon1009/work/project/xray-report/data'
+data_path = '../../xraydata/data'
 EPOCHS = 20

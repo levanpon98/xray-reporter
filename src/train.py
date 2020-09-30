@@ -4,18 +4,18 @@ import datetime
 import tensorflow as tf
 from tensorflow.keras.utils import Progbar
 
-from src import config
-from src.loader import load_data
-from src.models.encoder import Encoder
-from src.models.decoder import Decoder
-
+import config
+from loader import load_data
+from models.encoder import Encoder
+from models.decoder import Decoder, MultiheadDecoder
 
 if __name__ == '__main__':
 
     train_ds, valid_ds, max_length_train, max_length_valid, tokenizer = load_data(config.data_path)
 
     encoder = Encoder(config.embedding_dim)
-    decoder = Decoder(config.embedding_dim, config.units, config.vocab_size)
+    # decoder = Decoder(config.embedding_dim, config.units, config.vocab_size)
+    decoder = MultiheadDecoder(config.embedding_dim, config.units, config.vocab_size)
     optimizer = tf.keras.optimizers.Adam()
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
 
@@ -47,14 +47,16 @@ if __name__ == '__main__':
         # because the captions are not related from image to image
         hidden = decoder.reset_state(batch_size=target.shape[0])
         dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
-
+        # target length x units
         with tf.GradientTape() as tape:
+            # 81 x 256
             features = encoder(img_tensor)
+            print('encode shape :', features.shape)
 
             for i in range(1, target.shape[1]):
                 # passing the features through the decoder
                 predictions, hidden, _ = decoder(dec_input, features, hidden)
-
+                
                 loss += loss_function(target[:, i], predictions)
 
                 # using teacher forcing
@@ -70,20 +72,52 @@ if __name__ == '__main__':
 
         return loss, total_loss
 
+    def evaluate_step(img_tensor, target):
+        loss = 0
 
-    EPOCHS = 20
+        # initializing the hidden state for each batch
+        # because the captions are not related from image to image
+        hidden = decoder.reset_state(batch_size=target.shape[0])
+        dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
+
+        features = encoder(img_tensor)
+
+        for i in range(1, target.shape[1]):
+            # passing the features through the decoder
+            predictions, hidden, _ = decoder(dec_input, features, hidden)
+
+            loss += loss_function(target[:, i], predictions)
+
+            # using teacher forcing
+            dec_input = tf.expand_dims(target[:, i], 1)
+
+        total_loss = (loss / int(target.shape[1]))
+
+        return loss, total_loss
+
+    EPOCHS = config.EPOCHS
 
     for epoch in range(0, EPOCHS):
         start = time.time()
         total_loss = 0
 
         pb_i = Progbar(max_length_train, stateful_metrics=['loss'])
+        # Training
+        print('[TRAIN]')
         for (batch, (img_tensor, target)) in enumerate(train_ds):
 
             batch_loss, t_loss = train_step(img_tensor, target)
             total_loss += t_loss
-            pb_i.add(config.BATCH_SIZE, values=[('loss', total_loss)])
-
+            pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
+            pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
+        
+        # Evaluate
+        print('[EVALUATE]')
+        for (batch, (img_tensor, target)) in enumerate(valid_ds):
+            batch_loss, t_loss = evaluate_step(img_tensor, target)
+            total_loss += t_loss
+            pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
+            pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
         ckpt_manager.save()
 
 
