@@ -1,11 +1,11 @@
 image_width = 300
 image_height = 300
 image_channels = 3
-BATCH_SIZE = 8
+BATCH_SIZE = 6
 BUFFER_SIZE = 1000
 embedding_dim = 256
 units = 512
-num_layers = 4
+num_layers = 2
 num_heads = 8
 dff = 1024
 top_k = 5000
