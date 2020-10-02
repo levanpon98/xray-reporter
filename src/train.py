@@ -7,7 +7,7 @@ from tensorflow.keras.utils import Progbar
 import config
 from loader import load_data
 from models.encoder import Encoder
-from models.decoder import Decoder, MultiheadDecoder
+from models.decoder import Decoder, MultiheadDecoder, TranslayerDecoder
 
 if __name__ == '__main__':
 
@@ -15,7 +15,14 @@ if __name__ == '__main__':
 
     encoder = Encoder(config.embedding_dim)
     # decoder = Decoder(config.embedding_dim, config.units, config.vocab_size)
-    decoder = MultiheadDecoder(config.embedding_dim, config.units, config.vocab_size)
+    # decoder = MultiheadDecoder(config.embedding_dim, config.units, config.vocab_size)
+    decoder = TranslayerDecoder(num_layers= config.num_layers,
+                                embedding_dim= config.embedding_dim, 
+                                units= config.units,
+                                num_heads= config.num_heads,
+                                dff= config.dff,
+                                vocab_size= config.vocab_size
+                                )
     optimizer = tf.keras.optimizers.Adam()
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
 
@@ -51,7 +58,6 @@ if __name__ == '__main__':
         with tf.GradientTape() as tape:
             # 81 x 256
             features = encoder(img_tensor)
-            print('encode shape :', features.shape)
 
             for i in range(1, target.shape[1]):
                 # passing the features through the decoder
@@ -101,23 +107,25 @@ if __name__ == '__main__':
         start = time.time()
         total_loss = 0
 
-        pb_i = Progbar(max_length_train, stateful_metrics=['loss'])
+        pb_i = Progbar(len(train_ds), stateful_metrics=['loss'])
         # Training
-        print('[TRAIN]')
+        print('[TRAIN] epoch',epoch + 1)
         for (batch, (img_tensor, target)) in enumerate(train_ds):
 
             batch_loss, t_loss = train_step(img_tensor, target)
             total_loss += t_loss
             pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
             pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
-        
+            print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
+        print("End epoch",epoch + 1)
+        print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         # Evaluate
-        print('[EVALUATE]')
-        for (batch, (img_tensor, target)) in enumerate(valid_ds):
-            batch_loss, t_loss = evaluate_step(img_tensor, target)
-            total_loss += t_loss
-            pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
-            pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
+        # print('[EVALUATE]')
+        # for (batch, (img_tensor, target)) in enumerate(valid_ds):
+        #     batch_loss, t_loss = evaluate_step(img_tensor, target)
+        #     total_loss += t_loss
+        #     pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
+        #     pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
         ckpt_manager.save()
 
 

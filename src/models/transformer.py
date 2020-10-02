@@ -86,7 +86,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
     return output, attention_weights
 
   def reset_state(self, batch_size):
-      return tf.zeros((batch_size, self.units))
+      return tf.zeros((batch_size, self.d_model))
 
 def create_padding_mask(seq):
   seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
@@ -96,14 +96,31 @@ def create_padding_mask(seq):
   return seq[:, tf.newaxis, tf.newaxis, :]  # (batch_size, 1, 1, seq_len)
 
 class FullyConnected(tf.keras.layers.Layer):
-  def __init__(self, dmodel, dff = 2048):
-    self.ffn = tf.keras.Sequential([
-        tf.keras.layers.Dense(dff, activation='relu'),  # (batch_size, seq_len, dff)
-        tf.keras.layers.Dense(d_model)  # (batch_size, seq_len, d_model)
-    ])
-  def call(self, x ):
-    return self.ffn(x)
+  def __init__(self, d_model, dff = 2048):
+    super(FullyConnected, self).__init__()
 
+    self.dense1 =  tf.keras.layers.Dense(dff, activation='relu') # (batch_size, seq_len, dff)
+    self.dense2 =  tf.keras.layers.Dense(d_model)  # (batch_size, seq_len, d_model)
+  def call(self, x ):
+    return self.dense2(self.dense1(x))
+
+class TransformerLayerWrapper(tf.keras.layers.Layer):
+  def __init__(self, num_layers,d_model, num_heads, dff, rate=0.1, use_image = False):
+    super(TransformerLayerWrapper, self).__init__()
+    self.num_layers = num_layers
+    self.trans_layers = [TransformerLayer(d_model, num_heads, dff, rate) 
+                  for _ in range(num_layers)]
+    self.use_image = use_image
+  def call(self,x ,training):
+    if not self.use_image:
+      mask = create_padding_mask(x)
+    else:
+      mask = None
+    self_attn_weights= {}
+    for i in range(self.num_layers):
+      x, self_attn = self.trans_layers[i](x, training = training,mask = mask)
+      self_attn_weights['layer_{}'.format(i+1)] = self_attn
+    return x,self_attn_weights
 
 class TransformerLayer(tf.keras.layers.Layer):
   def __init__(self, d_model, num_heads, dff, rate=0.1, with_external = False):
@@ -118,24 +135,24 @@ class TransformerLayer(tf.keras.layers.Layer):
     self.dropout1 = tf.keras.layers.Dropout(rate)
     self.dropout2 = tf.keras.layers.Dropout(rate)
     
-    self.with_external = with_external
+    self.with_external = with_external  
     # if self.with_external:
 
   def call(self, x, training, mask):
-    attn_output, _ = self.mha(x, x, x, mask)  # (batch_size, input_seq_len, d_model)
+    attn_output, self_attn = self.mha(x, x, x, mask)  # (batch_size, input_seq_len, d_model)
     attn_output = self.dropout1(attn_output, training=training)
+
     out1 = self.layernorm1(x + attn_output)  # (batch_size, input_seq_len, d_model)
-    
     ffn_output = self.ffn(out1)  # (batch_size, input_seq_len, d_model)
     ffn_output = self.dropout2(ffn_output, training=training)
     out2 = self.layernorm2(out1 + ffn_output)  # (batch_size, input_seq_len, d_model)
     
-    return out2
+    return out2, self_attn
 
 class Transformer(tf.keras.layers.Layer):
   def __init__(self, num_layers, d_model, num_heads, dff, rate=0.1):
     self.enc_layers = [TransformerLayer(d_model, num_heads, dff, rate) 
                       for _ in range(num_layers)]
-    self.enc_layers = [TransformerLayer(d_model, num_heads, dff, rate, with_external=Transformer) 
+    self.enc_layers = [TransformerLayer(d_model, num_heads, dff, rate, with_external=True) 
                       for _ in range(num_layers)]
 
