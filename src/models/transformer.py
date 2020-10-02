@@ -1,4 +1,5 @@
 import tensorflow as tf 
+from models.aoa import AoaLayer
 
 def scaled_dot_product_attention(q, k, v, mask):
   """Calculate the attention weights.
@@ -36,6 +37,23 @@ def scaled_dot_product_attention(q, k, v, mask):
 
   return output, attention_weights
 
+class AoaMultiHeadAttention(tf.keras.layers.Layer):
+  '''
+  A wrapper of MultiheadAttention
+  '''
+  def __init__(self, d_model, num_heads,dropout_aoa =0.3):
+    super(AoaMultiHeadAttention, self).__init__()
+    
+    self.multiheadattention = MultiHeadAttention(d_model, num_heads= 8)
+    self.layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+    self.aoa_layer = AoaLayer(d_model, dropout_aoa)
+  def call(self,x):
+    out, attention_weights = self.multiheadattention(x, x, x)
+    out = self.aoa_layer(x,out)
+    out = self.layernorm(x + out)
+    return out, attention_weights
+
+    
 
 class MultiHeadAttention(tf.keras.layers.Layer):
   def __init__(self, d_model, num_heads):
@@ -52,9 +70,10 @@ class MultiHeadAttention(tf.keras.layers.Layer):
     self.wv = tf.keras.layers.Dense(d_model)
     
     self.dense = tf.keras.layers.Dense(d_model)
-        
+  
   def split_heads(self, x, batch_size):
-    """Split the last dimension into (num_heads, depth).
+    """
+    Split the last dimension into (num_heads, depth).
     Transpose the result such that the shape is (batch_size, num_heads, seq_len, depth)
     """
     x = tf.reshape(x, (batch_size, -1, self.num_heads, self.depth))
@@ -62,7 +81,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
     
   def call(self, v, k, q, mask = None):
     batch_size = tf.shape(q)[0]
-    
+
     q = self.wq(q)  # (batch_size, seq_len, d_model)
     k = self.wk(k)  # (batch_size, seq_len, d_model)
     v = self.wv(v)  # (batch_size, seq_len, d_model)
@@ -82,7 +101,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
                                   (batch_size, -1, self.d_model))  # (batch_size, seq_len_q, d_model)
 
     output = self.dense(concat_attention)  # (batch_size, seq_len_q, d_model)
-        
+
     return output, attention_weights
 
   def reset_state(self, batch_size):

@@ -19,3 +19,4 @@ class Encoder(tf.keras.Model):
         x = self.fc(x, training=training)
         x = tf.nn.relu(x)
         return x
+

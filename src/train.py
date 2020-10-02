@@ -7,7 +7,7 @@ from tensorflow.keras.utils import Progbar
 import config
 from loader import load_data
 from models.encoder import Encoder
-from models.decoder import Decoder, MultiheadDecoder, TranslayerDecoder
+from models.decoder import Decoder, MultiheadDecoder, TranslayerDecoder, AoaDecoder
 
 if __name__ == '__main__':
 
@@ -15,14 +15,14 @@ if __name__ == '__main__':
 
     encoder = Encoder(config.embedding_dim)
     # decoder = Decoder(config.embedding_dim, config.units, config.vocab_size)
-    # decoder = MultiheadDecoder(config.embedding_dim, config.units, config.vocab_size)
-    decoder = TranslayerDecoder(num_layers= config.num_layers,
-                                embedding_dim= config.embedding_dim, 
-                                units= config.units,
-                                num_heads= config.num_heads,
-                                dff= config.dff,
-                                vocab_size= config.vocab_size
-                                )
+    decoder = AoaDecoder(config.embedding_dim, config.units, config.vocab_size)
+    # decoder = TranslayerDecoder(num_layers= config.num_layers,
+    #                             embedding_dim= config.embedding_dim, 
+    #                             units= config.units,
+    #                             num_heads= config.num_heads,
+    #                             dff= config.dff,
+    #                             vocab_size= config.vocab_size
+    #                             )
     optimizer = tf.keras.optimizers.Adam()
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
 
