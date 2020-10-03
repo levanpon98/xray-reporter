@@ -54,9 +54,9 @@ class AoaMultiHeadAttentionWrapper(tf.keras.layers.Layer):
     '''
     self_attn_weights = {}
     for i in range(self.num_layers):
-      q, self_attn = self.aoa_layers[i](v,k,x, mask = mask)
+      state, q, self_attn = self.aoa_layers[i](v,k,q, mask = mask)
       self_attn_weights['layer_{}'.format(i+1)] = self_attn
-    return q,self_attn_weights
+    return q ,state, self_attn_weights
  
 class AoaMultiHeadAttention(tf.keras.layers.Layer):
   '''
@@ -73,9 +73,9 @@ class AoaMultiHeadAttention(tf.keras.layers.Layer):
   def call(self,v, k ,q, mask = None):
     # q in this scope hasn't go through an linear layer
     out, attention_weights = self.multiheadattention(v, k, q, mask)
-    out = self.aoa_layer(q,out)
-    out = self.layernorm(q + out)
-    return out, attention_weights
+    state = self.aoa_layer(q,out)
+    out = self.layernorm(q + state)
+    return state,out, attention_weights
 
     
 class MultiHeadAttention(tf.keras.layers.Layer):

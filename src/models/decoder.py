@@ -188,7 +188,7 @@ class AoaDecoder(tf.keras.Model):
 
     def call(self, x, prev_state, features, hidden):
         # defining attention as a separate model
-        features, _ = self.encoder_aoa(features,features,features)
+        features ,_ ,_ = self.encoder_aoa(features,features,features)
         # context_vector, attention_weights = self.attention(features, hidden)
         
         # mean pooling
@@ -208,9 +208,9 @@ class AoaDecoder(tf.keras.Model):
 
         # # shape == (batch_size, max_length, hidden_size)
         # x = self.fc1(output)
-        prev_state, attention_weights = self.decoder_aoa(features, features, output, dec_mask) 
+        out, prev_state, attention_weights = self.decoder_aoa(features, features, output, dec_mask) 
         # x shape == (batch_size * max_length, hidden_size)
-        x = tf.reshape(prev_state, (-1, prev_state.shape[2]))
+        x = tf.reshape(out, (-1, out.shape[2]))
 
         # output shape == (batch_size * max_length, vocab)
         x = self.fc2(x)
