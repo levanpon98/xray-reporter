@@ -16,12 +16,12 @@ if __name__ == '__main__':
     encoder = Encoder(config.embedding_dim)
     # decoder = Decoder(config.embedding_dim, config.units, config.vocab_size)
     # decoder = MultiheadDecoder(config.embedding_dim, config.units, config.vocab_size)
-    decoder = TranslayerDecoder(num_layers= config.num_layers,
-                                embedding_dim= config.embedding_dim, 
-                                units= config.units,
-                                num_heads= config.num_heads,
-                                dff= config.dff,
-                                vocab_size= config.vocab_size
+    decoder = TranslayerDecoder(num_layers=config.num_layers,
+                                embedding_dim=config.embedding_dim,
+                                units=config.units,
+                                num_heads=config.num_heads,
+                                dff=config.dff,
+                                vocab_size=config.vocab_size
                                 )
     optimizer = tf.keras.optimizers.Adam()
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
@@ -38,6 +38,7 @@ if __name__ == '__main__':
     train_summary = tf.summary.create_file_writer(train_log_dir)
     test_summary = tf.summary.create_file_writer(test_log_dir)
 
+
     def loss_function(real, pred):
         mask = tf.math.logical_not(tf.math.equal(real, 0))
         loss_ = loss_object(real, pred)
@@ -46,6 +47,7 @@ if __name__ == '__main__':
         loss_ *= mask
 
         return tf.reduce_mean(loss_)
+
 
     def train_step(img_tensor, target):
         loss = 0
@@ -62,14 +64,14 @@ if __name__ == '__main__':
             for i in range(1, target.shape[1]):
                 # passing the features through the decoder
                 predictions, hidden, _ = decoder(dec_input, features, hidden)
-                
+
                 loss += loss_function(target[:, i], predictions)
 
                 # using teacher forcing
                 dec_input = tf.expand_dims(target[:, i], 1)
 
         total_loss = (loss / int(target.shape[1]))
- 
+
         trainable_variables = encoder.trainable_variables + decoder.trainable_variables
 
         gradients = tape.gradient(loss, trainable_variables)
@@ -77,6 +79,7 @@ if __name__ == '__main__':
         optimizer.apply_gradients(zip(gradients, trainable_variables))
 
         return loss, total_loss
+
 
     def evaluate_step(img_tensor, target):
         loss = 0
@@ -101,6 +104,7 @@ if __name__ == '__main__':
 
         return loss, total_loss
 
+
     EPOCHS = config.EPOCHS
 
     for epoch in range(0, EPOCHS):
@@ -109,16 +113,15 @@ if __name__ == '__main__':
 
         pb_i = Progbar(len(train_ds), stateful_metrics=['loss'])
         # Training
-        print('[TRAIN] epoch',epoch + 1)
+        print('[TRAIN] epoch', epoch + 1)
         for (batch, (img_tensor, target)) in enumerate(train_ds):
-
             batch_loss, t_loss = train_step(img_tensor, target)
             total_loss += t_loss
             pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
             pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
-            print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
-        print("End epoch",epoch + 1)
-        print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
+            print("avg loss = {} , total loss = {}".format(total_loss / batch, total_loss))
+        print("End epoch", epoch + 1)
+        print("avg loss = {} , total loss = {}".format(total_loss / batch, total_loss))
         # Evaluate
         # print('[EVALUATE]')
         # for (batch, (img_tensor, target)) in enumerate(valid_ds):
@@ -127,5 +130,3 @@ if __name__ == '__main__':
         #     pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
         #     pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
         ckpt_manager.save()
-
-
