@@ -78,6 +78,38 @@ if __name__ == '__main__':
 
         return loss, total_loss
 
+def train_aoa_step(img_tensor, target):
+        loss = 0
+
+        # initializing the hidden state for each batch
+        # because the captions are not related from image to image
+        hidden = decoder.reset_state(batch_size=target.shape[0])
+        dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
+        # target length x units
+        with tf.GradientTape() as tape:
+            # 81 x 256
+            features = encoder(img_tensor)
+
+            for i in range(1, target.shape[1]):
+                # passing the features through the decoder
+                predictions, prev_state, hidden, _ = decoder(dec_input ,prev_state ,features, hidden)
+                
+                loss += loss_function(target[:, i], predictions)
+
+                # using teacher forcing
+                dec_input = tf.expand_dims(target[:, i], 1)
+
+        total_loss = (loss / int(target.shape[1]))
+ 
+        trainable_variables = encoder.trainable_variables + decoder.trainable_variables
+
+        gradients = tape.gradient(loss, trainable_variables)
+
+        optimizer.apply_gradients(zip(gradients, trainable_variables))
+
+        return loss, total_loss
+
+
     def evaluate_step(img_tensor, target):
         loss = 0
 
@@ -107,16 +139,17 @@ if __name__ == '__main__':
         start = time.time()
         total_loss = 0
 
-        pb_i = Progbar(len(train_ds), stateful_metrics=['loss'])
+        # pb_i = Progbar(len(train_ds), stateful_metrics=['loss'])
         # Training
         print('[TRAIN] epoch',epoch + 1)
         for (batch, (img_tensor, target)) in enumerate(train_ds):
 
-            batch_loss, t_loss = train_step(img_tensor, target)
+            batch_loss, t_loss = train_aoa_step(img_tensor, target)
             total_loss += t_loss
-            pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
-            pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
-            print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
+            # pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
+            # pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
+            if epoch % 20 == 0:
+                print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         print("End epoch",epoch + 1)
         print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         # Evaluate

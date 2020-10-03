@@ -1,5 +1,5 @@
 import tensorflow as tf
-from models.transformer import MultiHeadAttention, TransformerLayerWrapper, AoaMultiHeadAttention
+from models.transformer import MultiHeadAttention, TransformerLayerWrapper, AoaMultiHeadAttention, AoaMultiHeadAttentionWrapper
 
 class BahdanauAttention(tf.keras.Model):
     def __init__(self, units):
@@ -182,34 +182,38 @@ class AoaDecoder(tf.keras.Model):
         self.fc1 = tf.keras.layers.Dense(self.units)
         self.fc2 = tf.keras.layers.Dense(vocab_size)
 
-        self.multiheadattention = AoaMultiHeadAttention(self.units, num_heads= 8)
-        self.attention = BahdanauAttention(self.units)
+        self.encoder_aoa = AoaMultiHeadAttentionWrapper(num_layers,self.units, num_heads= 8)
+        self.decoder_aoa = AoaMultiHeadAttentionWrapper(num_layers,self.units, num_heads= 8)
 
-    def call(self, x, features, hidden):
+    def call(self, x, prev_state, features, hidden):
         # defining attention as a separate model
-
-        features, _ = self.multiheadattention(features)
-        context_vector, attention_weights = self.attention(features, hidden)
-
+        features, _ = self.encoder_aoa(features,features,features)
+        # context_vector, attention_weights = self.attention(features, hidden)
+        
+        # mean pooling
+        context_vector = tf.reduce_mean(features)
+        
         # x shape after passing through embedding == (batch_size, 1, embedding_dim)
         x = self.embedding(x)
 
         # x shape after concatenation == (batch_size, 1, embedding_dim + hidden_size)
-        x = tf.concat([tf.expand_dims(context_vector, 1), x], axis=-1)
+        # x = [embed(token_i) , c_t-1 + meanpooling(a)]
+        x = tf.concat([tf.expand_dims(context_vector, 1) + prev_state, x], axis=-1)
 
         # passing the concatenated vector to the GRU
         output, state = self.gru(x)
 
-        # shape == (batch_size, max_length, hidden_size)
-        x = self.fc1(output)
+        # # shape == (batch_size, max_length, hidden_size)
+        # x = self.fc1(output)
 
+        prev_state, _ = self.decoder_aoa(output,features, features) 
         # x shape == (batch_size * max_length, hidden_size)
         x = tf.reshape(x, (-1, x.shape[2]))
 
         # output shape == (batch_size * max_length, vocab)
         x = self.fc2(x)
 
-        return x, state, attention_weights
+        return x, prev_state, state, attention_weights
         
     def reset_state(self, batch_size):
         return tf.zeros((batch_size, self.units))

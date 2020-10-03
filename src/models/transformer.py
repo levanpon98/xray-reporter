@@ -37,9 +37,31 @@ def scaled_dot_product_attention(q, k, v, mask):
 
   return output, attention_weights
 
+class AoaMultiHeadAttentionWrapper(tf.keras.layers.Layer):
+  '''
+  A wrapper of AoaMultiHeadAttention
+  '''
+  def __init__(self ,num_layers ,d_model ,num_heads , dropout_aoa =0.3):
+    super(AoaMultiHeadAttention, self).__init__()
+    self.num_layers = num_layers
+
+    self.aoa_layers = [AoaMultiHeadAttention(d_model, num_heads,dropout_aoa) 
+              for _ in range(num_layers)]
+
+  def call(self,v, k ,q):
+    '''
+    For paper, num_layers = 6
+    '''
+    self_attn_weights = {}
+    for i in range(self.num_layers):
+      x, self_attn = self.aoa_layers[i](v,k,q, training = training,mask = mask)
+      self_attn_weights['layer_{}'.format(i+1)] = self_attn
+    return x,self_attn_weights
+ 
 class AoaMultiHeadAttention(tf.keras.layers.Layer):
   '''
   A wrapper of MultiheadAttention
+  because Python use shallow copy so it may not true for residule connection
   '''
   def __init__(self, d_model, num_heads,dropout_aoa =0.3):
     super(AoaMultiHeadAttention, self).__init__()
@@ -47,8 +69,9 @@ class AoaMultiHeadAttention(tf.keras.layers.Layer):
     self.multiheadattention = MultiHeadAttention(d_model, num_heads= 8)
     self.layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
     self.aoa_layer = AoaLayer(d_model, dropout_aoa)
-  def call(self,x):
-    out, attention_weights = self.multiheadattention(x, x, x)
+    
+  def call(self,v, k ,q):
+    out, attention_weights = self.multiheadattention(v, k, q)
     out = self.aoa_layer(x,out)
     out = self.layernorm(x + out)
     return out, attention_weights
@@ -124,7 +147,7 @@ class FullyConnected(tf.keras.layers.Layer):
     return self.dense2(self.dense1(x))
 
 class TransformerLayerWrapper(tf.keras.layers.Layer):
-  def __init__(self, num_layers,d_model, num_heads, dff, rate=0.1, use_image = False):
+  def __init__(self,num_layers ,d_model , num_heads, dff, rate=0.1, use_image = False):
     super(TransformerLayerWrapper, self).__init__()
     self.num_layers = num_layers
     self.trans_layers = [TransformerLayer(d_model, num_heads, dff, rate) 
