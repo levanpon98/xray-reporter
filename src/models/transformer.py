@@ -42,19 +42,19 @@ class AoaMultiHeadAttentionWrapper(tf.keras.layers.Layer):
   A wrapper of AoaMultiHeadAttention
   '''
   def __init__(self ,num_layers ,d_model ,num_heads , dropout_aoa =0.3):
-    super(AoaMultiHeadAttention, self).__init__()
+    super(AoaMultiHeadAttentionWrapper, self).__init__()
     self.num_layers = num_layers
 
     self.aoa_layers = [AoaMultiHeadAttention(d_model, num_heads,dropout_aoa) 
               for _ in range(num_layers)]
 
-  def call(self,v, k ,q):
+  def call(self,v, k ,q, mask = None):
     '''
     For paper, num_layers = 6
     '''
     self_attn_weights = {}
     for i in range(self.num_layers):
-      x, self_attn = self.aoa_layers[i](v,k,q, training = training,mask = mask)
+      x, self_attn = self.aoa_layers[i](v,k,q, mask = mask)
       self_attn_weights['layer_{}'.format(i+1)] = self_attn
     return x,self_attn_weights
  
@@ -70,14 +70,14 @@ class AoaMultiHeadAttention(tf.keras.layers.Layer):
     self.layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
     self.aoa_layer = AoaLayer(d_model, dropout_aoa)
     
-  def call(self,v, k ,q):
-    out, attention_weights = self.multiheadattention(v, k, q)
-    out = self.aoa_layer(x,out)
-    out = self.layernorm(x + out)
+  def call(self,v, k ,q, mask = None):
+    # q in this scope hasn't go through an linear layer
+    out, attention_weights = self.multiheadattention(v, k, q, mask)
+    out = self.aoa_layer(q,out)
+    out = self.layernorm(q + out)
     return out, attention_weights
 
     
-
 class MultiHeadAttention(tf.keras.layers.Layer):
   def __init__(self, d_model, num_heads):
     super(MultiHeadAttention, self).__init__()

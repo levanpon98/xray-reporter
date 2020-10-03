@@ -15,7 +15,11 @@ if __name__ == '__main__':
 
     encoder = Encoder(config.embedding_dim)
     # decoder = Decoder(config.embedding_dim, config.units, config.vocab_size)
-    decoder = AoaDecoder(config.embedding_dim, config.units, config.vocab_size)
+    decoder = AoaDecoder(config.num_layers,
+                        config.embedding_dim,
+                        config.units,
+                        config.vocab_size
+                        )
     # decoder = TranslayerDecoder(num_layers= config.num_layers,
     #                             embedding_dim= config.embedding_dim, 
     #                             units= config.units,
@@ -78,13 +82,14 @@ if __name__ == '__main__':
 
         return loss, total_loss
 
-def train_aoa_step(img_tensor, target):
+    def train_aoa_step(img_tensor, target):
         loss = 0
 
         # initializing the hidden state for each batch
         # because the captions are not related from image to image
         hidden = decoder.reset_state(batch_size=target.shape[0])
         dec_input = tf.expand_dims([tokenizer.word_index['<start>']] * target.shape[0], 1)
+        prev_state = tf.zeros((target.shape[0],1,config.units))
         # target length x units
         with tf.GradientTape() as tape:
             # 81 x 256
@@ -143,7 +148,6 @@ def train_aoa_step(img_tensor, target):
         # Training
         print('[TRAIN] epoch',epoch + 1)
         for (batch, (img_tensor, target)) in enumerate(train_ds):
-
             batch_loss, t_loss = train_aoa_step(img_tensor, target)
             total_loss += t_loss
             # pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
