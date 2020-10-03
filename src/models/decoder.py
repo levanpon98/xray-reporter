@@ -187,7 +187,6 @@ class AoaDecoder(tf.keras.Model):
         self.decoder_aoa = AoaMultiHeadAttentionWrapper(num_layers,self.units, num_heads= 8)
 
     def call(self, x, prev_state, features, hidden):
-        print(prev_state.shape)
         # defining attention as a separate model
         features, _ = self.encoder_aoa(features,features,features)
         # context_vector, attention_weights = self.attention(features, hidden)
@@ -215,7 +214,7 @@ class AoaDecoder(tf.keras.Model):
 
         # output shape == (batch_size * max_length, vocab)
         x = self.fc2(x)
-        print("pass!")
+
         return x, prev_state, state, attention_weights
         
     def reset_state(self, batch_size):

@@ -139,7 +139,8 @@ if __name__ == '__main__':
         return loss, total_loss
 
     EPOCHS = config.EPOCHS
-
+    print_every = 20
+    
     for epoch in range(0, EPOCHS):
         start = time.time()
         total_loss = 0
@@ -152,7 +153,7 @@ if __name__ == '__main__':
             total_loss += t_loss
             # pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
             # pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
-            if epoch % 20 == 0:
+            if epoch % print_every == 0:
                 print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         print("End epoch",epoch + 1)
         print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))

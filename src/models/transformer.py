@@ -54,9 +54,9 @@ class AoaMultiHeadAttentionWrapper(tf.keras.layers.Layer):
     '''
     self_attn_weights = {}
     for i in range(self.num_layers):
-      x, self_attn = self.aoa_layers[i](v,k,q, mask = mask)
+      q, self_attn = self.aoa_layers[i](v,k,x, mask = mask)
       self_attn_weights['layer_{}'.format(i+1)] = self_attn
-    return x,self_attn_weights
+    return q,self_attn_weights
  
 class AoaMultiHeadAttention(tf.keras.layers.Layer):
   '''
