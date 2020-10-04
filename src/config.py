@@ -14,3 +14,4 @@ features_shape = 2048
 attention_features_shape = 64
 data_path = '../../xraydata/data'
 EPOCHS = 20
+print_every = 40

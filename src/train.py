@@ -68,6 +68,7 @@ if __name__ == '__main__':
                 # using teacher forcing
                 dec_input = tf.expand_dims(target[:, i], 1)
 
+
         total_loss = (loss / int(target.shape[1]))
  
         trainable_variables = encoder.trainable_variables + decoder.trainable_variables
@@ -94,9 +95,9 @@ if __name__ == '__main__':
 
             loss += loss_function(target[:, i], predictions)
 
-            # using teacher forcing
-            dec_input = tf.expand_dims(target[:, i], 1)
-
+            predicted_id = tf.random.categorical(predictions, 1).numpy()
+            dec_input = tf.expand_dims(predicted_id[:,0], 1)
+  
         total_loss = (loss / int(target.shape[1]))
 
         return loss, total_loss
@@ -107,25 +108,28 @@ if __name__ == '__main__':
         start = time.time()
         total_loss = 0
 
-        pb_i = Progbar(len(train_ds), stateful_metrics=['loss'])
+        # pb_i = Progbar(len(train_ds), stateful_metrics=['loss'])
         # Training
         print('[TRAIN] epoch',epoch + 1)
         for (batch, (img_tensor, target)) in enumerate(train_ds):
 
             batch_loss, t_loss = train_step(img_tensor, target)
             total_loss += t_loss
-            pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
-            pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
-            print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
+            # pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
+            # pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
+            if batch % config.print_every:
+                print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         print("End epoch",epoch + 1)
         print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         # Evaluate
-        # print('[EVALUATE]')
-        # for (batch, (img_tensor, target)) in enumerate(valid_ds):
-        #     batch_loss, t_loss = evaluate_step(img_tensor, target)
-        #     total_loss += t_loss
-        #     pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
-        #     pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
+        print('[EVALUATE]')
+        for (batch, (img_tensor, target)) in enumerate(valid_ds):
+            batch_loss, t_loss = evaluate_step(img_tensor, target)
+            total_loss += t_loss
+            if batch % config.print_every:
+                print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
+        print("End epoch",epoch + 1)
+        print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         ckpt_manager.save()
 
 
