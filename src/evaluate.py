@@ -122,6 +122,6 @@ def main():
         'predict' : preds,
         'label' : labels
     })
-    out.to_csv('out.csv')
+    out.to_csv('out2.csv')
 if __name__ == '__main__':
     main()

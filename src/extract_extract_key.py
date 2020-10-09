@@ -12,6 +12,7 @@ def preprocess(sent):
 
 def cleanText(text):
     text = text.replace('xxxx','')
+    text = text.replace('<end>','')
     text = text.strip().split(' ')
 
     if text[0] == 'and':
@@ -23,7 +24,7 @@ def checkPassive(text):
         return True
     return False
 
-def solveEndingVerb(subj,obj,idx,ix):
+def solveEndingVerb(subj,obj):
     sent = obj[-1]
     pos_tag = preprocess(sent)
     for i in range(len(pos_tag) - 1, -1 , - 1):
@@ -32,7 +33,6 @@ def solveEndingVerb(subj,obj,idx,ix):
             mark = i
             obj[-1] = ' '.join(sent.split(' ')[:mark])
             subj.append(' '.join(sent.split(' ')[mark:]))
-            idx.append(ix)
             break
 
     return subj,obj
@@ -66,11 +66,11 @@ def extract_keyvalue(sentences):
                 getObj = True
 
             if getObj == False:
-                # if tags[1] != 'VBP' and tags[1] != 'VBZ':
-                noun += tags[0] + ' '
+                if tags[1] != 'VBP' and tags[1] != 'VBZ':
+                    noun += tags[0] + ' '
             elif getObj == True:
-                # if tags[0] != 'and':
-                objs += tags[0] + ' '
+                if tags[0] != 'and':
+                    objs += tags[0] + ' '
             
             if tags[1] == 'VBP' or tags[1] == 'VBZ' or i == len(pos_tag) - 1 or tags[0] == 'and' :
                 if getObj:
@@ -87,7 +87,7 @@ def extract_keyvalue(sentences):
 
                 # if getObj and len(obj[-1].split(' ')) >= 3 and (preprocess(obj[-1])[-2][1] == 'EX' or preprocess(obj[-1])[-2][1] == 'EX'):
                 if getObj and len(obj[-1].split(' ')) >= 3 and (preprocess(obj[-1])[-1][1] == 'VBZ' or preprocess(obj[-1])[-1][1] == 'VBP'):
-                    subj , obj = solveEndingVerb(subj,obj,idx,ix)
+                    subj , obj = solveEndingVerb(subj,obj)
                     getObj = not getObj
 
                 if getObj and len(subj) >= 1 and subj[-1].split(' ')[-1] == 'and':
@@ -135,8 +135,8 @@ if __name__ == "__main__":
                     getObj = True
 
                 if getObj == False:
-                    # if tags[1] != 'VBP' and tags[1] != 'VBZ':
-                    noun += tags[0] + ' '
+                    if tags[1] != 'VBP' and tags[1] != 'VBZ':
+                        noun += tags[0] + ' '
                 elif getObj == True:
                     # if tags[0] != 'and':
                     objs += tags[0] + ' '
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
                     # if getObj and len(obj[-1].split(' ')) >= 3 and (preprocess(obj[-1])[-2][1] == 'EX' or preprocess(obj[-1])[-2][1] == 'EX'):
                     if getObj and len(obj[-1].split(' ')) >= 3 and (preprocess(obj[-1])[-1][1] == 'VBZ' or preprocess(obj[-1])[-1][1] == 'VBP'):
-                        subj , obj = solveEndingVerb(subj,obj,idx,ix)
+                        subj , obj = solveEndingVerb(subj,obj)
                         getObj = not getObj
 
                     if getObj and len(subj) >= 1 and subj[-1].split(' ')[-1] == 'and':
