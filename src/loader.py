@@ -11,7 +11,8 @@ import config
 def load_csv(data_root):
     contents = pd.read_csv(os.path.join(data_root, 'data.csv'))
     all_text = contents['findings'].map(lambda x: '<start> ' + x + ' <end>').astype(str).to_numpy()
-    all_images = contents['filename'].map(lambda x: os.path.join(data_root, 'images/images_normalized', x)).astype(str).to_numpy()
+    all_images = contents['filename'].map(lambda x: os.path.join(data_root, 'images', x)).astype(
+        str).to_numpy()
 
     train_images, valid_images, train_texts, valid_texts = train_test_split(all_images, all_text, test_size=0.2,
                                                                             random_state=42)
@@ -49,7 +50,7 @@ def load_data(data_path):
     tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=config.top_k,
                                                       oov_token="<unk>",
                                                       filters='!"#$\t\n',
-                                                      lower= True)
+                                                      lower=True)
 
     tokenizer.fit_on_texts(all_text)
     tokenizer.word_index['<pad>'] = 0

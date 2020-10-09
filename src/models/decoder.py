@@ -1,6 +1,7 @@
 import tensorflow as tf
 from models.transformer import MultiHeadAttention, TransformerLayerWrapper
 
+
 class BahdanauAttention(tf.keras.Model):
     def __init__(self, units):
         super(BahdanauAttention, self).__init__()
@@ -75,6 +76,7 @@ class Decoder(tf.keras.Model):
     def reset_state(self, batch_size):
         return tf.zeros((batch_size, self.units))
 
+
 class MultiheadDecoder(tf.keras.Model):
     def __init__(self, embedding_dim, units, vocab_size):
         super(MultiheadDecoder, self).__init__()
@@ -88,7 +90,7 @@ class MultiheadDecoder(tf.keras.Model):
         self.fc1 = tf.keras.layers.Dense(self.units)
         self.fc2 = tf.keras.layers.Dense(vocab_size)
 
-        self.multiheadattention = MultiHeadAttention(self.units, num_heads= 8)
+        self.multiheadattention = MultiHeadAttention(self.units, num_heads=8)
         self.attention = BahdanauAttention(self.units)
 
     def call(self, x, features, hidden):
@@ -116,12 +118,13 @@ class MultiheadDecoder(tf.keras.Model):
         x = self.fc2(x)
 
         return x, state, attention_weights
-        
+
     def reset_state(self, batch_size):
         return tf.zeros((batch_size, self.units))
 
+
 class TranslayerDecoder(tf.keras.Model):
-    def __init__(self, num_layers, embedding_dim, units, num_heads ,dff , vocab_size):
+    def __init__(self, num_layers, embedding_dim, units, num_heads, dff, vocab_size):
         super(TranslayerDecoder, self).__init__()
         self.units = units
 
@@ -133,17 +136,20 @@ class TranslayerDecoder(tf.keras.Model):
         self.fc1 = tf.keras.layers.Dense(self.units)
         self.fc2 = tf.keras.layers.Dense(vocab_size)
 
-        self.transformer_layers = TransformerLayerWrapper(num_layers= num_layers,
-                                                        d_model= embedding_dim,
-                                                        num_heads= num_heads,
-                                                        dff = dff,
-                                                        use_image= True
-                                                        )
+        self.transformer_layers = TransformerLayerWrapper(num_layers=num_layers,
+                                                          d_model=embedding_dim,
+                                                          num_heads=num_heads,
+                                                          dff=dff,
+                                                          use_image=True
+                                                          )
         self.attention = BahdanauAttention(self.units)
 
+    # @tf.function(input_signature=[tf.TensorSpec(shape=[1, 1], dtype=tf.int32, name='x'),
+    #                               tf.TensorSpec(shape=[1, 100, 256], dtype=tf.float32, name='features'),
+    #                               tf.TensorSpec(shape=[1, 512], dtype=tf.float32, name='hidden'), ])
     def call(self, x, features, hidden):
         # defining attention as a separate model
-        features, _ = self.transformer_layers(features, training = True)
+        features, _ = self.transformer_layers(features, training=True)
         context_vector, attention_weights = self.attention(features, hidden)
 
         # x shape after passing through embedding == (batch_size, 1, embedding_dim)
@@ -165,6 +171,7 @@ class TranslayerDecoder(tf.keras.Model):
         x = self.fc2(x)
 
         return x, state, attention_weights
-        
+
     def reset_state(self, batch_size):
         return tf.zeros((batch_size, self.units))
+

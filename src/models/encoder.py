@@ -10,12 +10,16 @@ class Encoder(tf.keras.Model):
     def __init__(self, embedding_dim):
         super(Encoder, self).__init__()
 
-        self.extract = EfficientNetB3(weights='imagenet', include_top=False, drop_connect_rate=0.4)
+        self.extract = EfficientNetB3(weights='imagenet', drop_connect_rate=0.4, include_top=False,
+                                      input_shape=(config.image_height, config.image_width, config.image_channels))
+
+        shape = self.extract.layers[-1].output_shape
+        self.reshape = tf.keras.layers.Reshape(target_shape=(shape[1] * shape[2], shape[3]))
         self.fc = tf.keras.layers.Dense(embedding_dim)
 
-    def call(self, x, training=None):
+    def call(self, x):
         x = self.extract(x)
-        x = tf.reshape(x, (x.shape[0], -1, x.shape[3]))
-        x = self.fc(x, training=training)
+        x = self.reshape(x)
+        x = self.fc(x)
         x = tf.nn.relu(x)
         return x
