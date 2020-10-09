@@ -13,6 +13,7 @@ import config
 from models.encoder import Encoder
 from models.decoder import TranslayerDecoder
 from utils import plot_attention
+from extract_extract_key import get_keyvalue
 
 def parser_args():
     parser = argparse.ArgumentParser(description='Inference model')
@@ -42,11 +43,11 @@ def main():
                                 vocab_size=config.vocab_size)
     optimizer = tf.keras.optimizers.Adam()
 
-    checkpoint_path = "../checkpoints"
+    checkpoint_path = "../checkpoints/"
     ckpt = tf.train.Checkpoint(encoder=encoder,
                                decoder=decoder,
                                optimizer=optimizer)
-    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=None)
+    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
     print("Restore latest checkpoints ...")
     ckpt.restore(ckpt_manager.latest_checkpoint).expect_partial()
 
@@ -66,11 +67,12 @@ def main():
             predicted_id = tf.random.categorical(predictions, 1)[0][0].numpy()
             try:
                 text.append(tokenizer.index_word[predicted_id])
+                if tokenizer.index_word[predicted_id] == '<end>':
+                    return text[:-1], attention_plot
             except:
                 print('OOV')
                 text.append('<oov>')
-            if tokenizer.index_word[predicted_id] == '<end>':
-                return text[:-1], attention_plot
+            
 
             dec_input = tf.expand_dims([predicted_id], 0)
 
@@ -91,9 +93,9 @@ def main():
     #         plot_attention(image, result, plot)
     #     print('Predict: ', ' '.join(result))
     
-    labels = pd.read_csv("data.csv")
-    filenames = labels['filename'].tolist()
-    labels = labels['findings'].tolist()
+    labels = pd.read_csv("/home/minh/work/xraydata/data/data.csv")
+    filenames = labels['filename'].tolist()[:50]
+    labels = labels['findings'].tolist()[:50]
     preds = []
     start = time.time()
     for filename in filenames:
@@ -111,6 +113,8 @@ def main():
             plot_attention(image, result, plot)
         print('Predict: ', ' '.join(result))
         preds.append(' '.join(result))
+        dic = get_keyvalue(' '.join(result))
+        print(dic)
         exit()
     print("Testing ended" ,time.time() - start)
     out = pd.DataFrame({
