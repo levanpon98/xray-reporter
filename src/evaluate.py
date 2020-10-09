@@ -54,7 +54,7 @@ def main():
     def evaluation(img):
         text = []
         attention_plot = np.zeros((config.max_length, config.attention_features_shape))
-
+        img = tf.keras.applications.inception_resnet_v2.preprocess_input(img)
         img = tf.expand_dims(img, axis=0)
         features = encoder(img)
 
