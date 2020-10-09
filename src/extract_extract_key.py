@@ -105,9 +105,23 @@ def extract_keyvalue(sentences):
     return subj, obj
 
 def get_keyvalue(sentences):
-    subj , obj = extract_keyvalue(sentences)
+    subj , obj = extract_keyvalue2(sentences)
     res = convert_list_to_dict(subj,obj)
     return res
+
+def extract_keyvalue2(sentences):
+    subj = []
+    obj = []
+    sentences = sentences.split('.')
+
+    for sent in sentences:
+        pos_tag = preprocess(sent)
+        for i,item in enumerate(pos_tag):
+            if item[1] == 'VBZ' or item[1] == 'VBP':
+                subj.append(' '.join(sent.strip().split(' ')[:i]))
+                obj.append(' '.join(sent.strip().split(' ')[i+1:]))
+                break
+    return subj,obj
 
 def convert_list_to_dict(li1,li2):
     res = {}
@@ -115,77 +129,6 @@ def convert_list_to_dict(li1,li2):
         res[item] = li2[i]
     return res
 if __name__ == "__main__":
-    data = pd.read_csv('out.csv')
-    src = data['predict'].tolist()
-    noun = ''
-    subj = []
-    obj = []
-    idx = []
-    for ix,sentences in enumerate(src):
-        for item in sentences.split('.'):
-            noun = ''
-            objs = ''
-            getObj = False
-            item = cleanText(item)
-            pos_tag = preprocess(item)
-            # print(pos_tag)
-            cnt = 0
-            for i,tags in enumerate(pos_tag):
-                if checkPassive(tags):
-                    getObj = True
-
-                if getObj == False:
-                    if tags[1] != 'VBP' and tags[1] != 'VBZ':
-                        noun += tags[0] + ' '
-                elif getObj == True:
-                    # if tags[0] != 'and':
-                    objs += tags[0] + ' '
-                
-                if tags[1] == 'VBP' or tags[1] == 'VBZ' or i == len(pos_tag) - 1 or tags[0] == 'and' :
-                    if getObj:
-                        obj.append(objs.strip())
-                        if not checkSubjInLast(objs)[0]:
-                            objs = ''
-
-                        if noun != '':
-                            subj.append(noun.strip())
-                            noun = ''
-                            idx.append(ix)
-                    else:
-                        subj.append(noun.strip())
-                        noun = ''
-                        idx.append(ix)
-
-                    # if getObj and len(obj[-1].split(' ')) >= 3 and (preprocess(obj[-1])[-2][1] == 'EX' or preprocess(obj[-1])[-2][1] == 'EX'):
-                    if getObj and len(obj[-1].split(' ')) >= 3 and (preprocess(obj[-1])[-1][1] == 'VBZ' or preprocess(obj[-1])[-1][1] == 'VBP'):
-                        subj , obj = solveEndingVerb(subj,obj)
-                        getObj = not getObj
-
-                    if getObj and len(subj) >= 1 and subj[-1].split(' ')[-1] == 'and':
-                        if isNounPhrase(obj[-1]) and obj[-1] != '':
-                            subj[-1] = subj[-1] + ' ' + obj[-1]
-                            obj.pop()
-                            getObj = not getObj
-                    getObj = not getObj
-            
-            # subj, obj = refineSubjObj(subj,obj)
-            if len(subj) > len(obj):
-                obj.extend([0] * (len(subj) - len(obj)))
-                idx.extend([ix] * (len(subj) - len(idx)))
-            elif len(subj) < len(obj):
-                subj.extend([0] * (len(obj) - len(subj)))
-                idx.extend([ix] * (len(obj) - len(idx)))
-
-    print(len(idx))
-    print(len(subj))
-    print(len(obj))
-    # print(subj)
-    # print(obj)
-    # padding
-    # obj.extend([0] * (len(subj) - len(obj)))
-    out_df = pd.DataFrame({
-                            'idx': idx,
-                            'subj':subj,
-                            'obj':obj
-                        })
-    out = out_df.to_csv('split_sentence.csv',index = False)
+    text = 'trachea is midline . cardio cardiomediastinal silhouette is within normal limits . there is no focal consolidation , pleural effusion or airspace opacity . limited evaluation reveals mild multilevel degenerative changes of the spine . interval resolution of the high svc . negative for focal pulmonary nodules are clear . are normal , and pulmonary vascularity appear within normal limits , and there is no focal consolidations , pleural effusion , or airspace consolidation . no focal area of consolidation . no pneumothorax or pleural effusion . lungs are hyperaerated suggestive of focal airspace consolidation are normal contour normal . the thoracic aorta is noted .",the cardiac silhouette and mediastinum size are within normal limits . there is no pulmonary edema . there is no focal consolidation . there are no of a pleural effusion . there is no evidence of pneumothorax .'
+    res = get_keyvalue(text)
+    print(res)
