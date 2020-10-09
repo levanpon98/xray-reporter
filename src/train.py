@@ -31,6 +31,8 @@ if __name__ == '__main__':
                                decoder=decoder,
                                optimizer=optimizer)
     ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
+    print("Restore latest checkpoints ...")
+    ckpt.restore(ckpt_manager.latest_checkpoint).expect_partial()
 
     current_time = datetime.datetime.now().strftime('%Y%m%d-H%M%S')
     train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
