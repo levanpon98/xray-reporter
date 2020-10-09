@@ -113,14 +113,19 @@ def extract_keyvalue2(sentences):
     subj = []
     obj = []
     sentences = sentences.split('.')
-
+    subj_text = ''
+    obj_text = ''
     for sent in sentences:
         pos_tag = preprocess(sent)
+        subj_text = ''
+        obj_text = ''
         for i,item in enumerate(pos_tag):
             if item[1] == 'VBZ' or item[1] == 'VBP':
-                subj.append(' '.join(sent.strip().split(' ')[:i]))
-                obj.append(' '.join(sent.strip().split(' ')[i+1:]))
-                break
+                subj_text = ' '.join(sent.strip().split(' ')[:i])
+                obj_text = ' '.join(sent.strip().split(' ')[i+1:])
+        if subj_text != '':
+            subj.append(subj_text)
+            obj.append(obj_text)
     return subj,obj
 
 def convert_list_to_dict(li1,li2):
@@ -130,5 +135,6 @@ def convert_list_to_dict(li1,li2):
     return res
 if __name__ == "__main__":
     text = 'trachea is midline . cardio cardiomediastinal silhouette is within normal limits . there is no focal consolidation , pleural effusion or airspace opacity . limited evaluation reveals mild multilevel degenerative changes of the spine . interval resolution of the high svc . negative for focal pulmonary nodules are clear . are normal , and pulmonary vascularity appear within normal limits , and there is no focal consolidations , pleural effusion , or airspace consolidation . no focal area of consolidation . no pneumothorax or pleural effusion . lungs are hyperaerated suggestive of focal airspace consolidation are normal contour normal . the thoracic aorta is noted .",the cardiac silhouette and mediastinum size are within normal limits . there is no pulmonary edema . there is no focal consolidation . there are no of a pleural effusion . there is no evidence of pneumothorax .'
+    text = 'there is no focal consolidation , pleural spaces are clear without focal air space consolidation .'
     res = get_keyvalue(text)
     print(res)
