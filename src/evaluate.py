@@ -93,7 +93,7 @@ def main():
     #         plot_attention(image, result, plot)
     #     print('Predict: ', ' '.join(result))
     
-    labels = pd.read_csv("/home/minh/work/xraydata/data/data.csv")
+    labels = pd.read_csv("./data.csv")
     filenames = labels['filename'].tolist()[:50]
     labels = labels['findings'].tolist()[:50]
     preds = []
@@ -111,17 +111,17 @@ def main():
         result, plot = evaluation(image)
         if args.plot:
             plot_attention(image, result, plot)
-        print('Predict: ', ' '.join(result))
+        # print('Predict: ', ' '.join(result))
         preds.append(' '.join(result))
         dic = get_keyvalue(' '.join(result))
-        print(dic)
-        exit()
+        # print(dic)
+        # exit()
     print("Testing ended" ,time.time() - start)
     out = pd.DataFrame({
         'filename' : filenames,
         'predict' : preds,
         'label' : labels
     })
-    out.to_csv('out2.csv')
+    out.to_csv('out.csv')
 if __name__ == '__main__':
     main()
