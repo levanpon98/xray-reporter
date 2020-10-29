@@ -1,5 +1,6 @@
 import time
 import datetime
+import math 
 
 import tensorflow as tf
 from tensorflow.keras.utils import Progbar
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     optimizer = tf.keras.optimizers.Adam()
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')
 
-    checkpoint_path = "./checkpoints/train"
+    checkpoint_path = "/content/drive/My Drive/xray-reporter/padchest/checkpoints"
     ckpt = tf.train.Checkpoint(encoder=encoder,
                                decoder=decoder,
                                optimizer=optimizer)
@@ -35,8 +36,8 @@ if __name__ == '__main__':
     ckpt.restore(ckpt_manager.latest_checkpoint).expect_partial()
 
     current_time = datetime.datetime.now().strftime('%Y%m%d-H%M%S')
-    train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
-    test_log_dir = 'logs/gradient_tape/' + current_time + '/test'
+    train_log_dir = '/content/drive/My Drive/xray-reporter/padchest/logs/gradient_tape/' + current_time + '/train'
+    test_log_dir = '/content/drive/My Drive/xray-reporter/padchest/logs/gradient_tape/' + current_time + '/test'
     train_summary = tf.summary.create_file_writer(train_log_dir)
     test_summary = tf.summary.create_file_writer(test_log_dir)
 
@@ -79,6 +80,10 @@ if __name__ == '__main__':
 
         optimizer.apply_gradients(zip(gradients, trainable_variables))
 
+        if math.isnan(loss):
+          print(predictions)
+          print(target)
+          exit()
         return loss, total_loss
 
     def evaluate_step(img_tensor, target):
@@ -123,6 +128,8 @@ if __name__ == '__main__':
                 print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         print("End epoch",epoch + 1)
         print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
+        ckpt_manager.save()
+
         # Evaluate
         print('[EVALUATE]')
         for (batch, (img_tensor, target)) in enumerate(valid_ds):
@@ -132,6 +139,5 @@ if __name__ == '__main__':
                 print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         print("End epoch",epoch + 1)
         print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
-        ckpt_manager.save()
 
 
