@@ -10,8 +10,8 @@ import config
 
 def load_csv(data_root):
     contents = pd.read_csv(os.path.join(data_root, 'data.csv'))
-    all_text = contents['findings'].map(lambda x: '<start> ' + x + ' <end>').astype(str).to_numpy()
-    all_images = contents['filename'].map(lambda x: os.path.join(data_root, 'images/images_normalized', x)).astype(str).to_numpy()
+    all_text = contents['Report'].map(lambda x: '<start> ' + x + ' <end>').astype(str).to_numpy()
+    all_images = contents['ImageID'].map(lambda x: os.path.join(data_root, 'resized', x)).astype(str).to_numpy()
 
     train_images, valid_images, train_texts, valid_texts = train_test_split(all_images, all_text, test_size=0.2,
                                                                             random_state=42)

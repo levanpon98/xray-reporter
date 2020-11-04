@@ -1,5 +1,5 @@
 import tensorflow as tf
-from models.transformer import MultiHeadAttention, TransformerLayerWrapper
+from models.transformer import MultiHeadAttention, TransformerLayerWrapper, Decoder
 
 class BahdanauAttention(tf.keras.Model):
     def __init__(self, units):
@@ -33,9 +33,9 @@ class BahdanauAttention(tf.keras.Model):
         return context_vector, attention_weights
 
 
-class Decoder(tf.keras.Model):
+class DecoderBaseline(tf.keras.Model):
     def __init__(self, embedding_dim, units, vocab_size):
-        super(Decoder, self).__init__()
+        super(DecoderBaseline, self).__init__()
         self.units = units
 
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_dim)
@@ -165,6 +165,47 @@ class TranslayerDecoder(tf.keras.Model):
         x = self.fc2(x)
 
         return x, state, attention_weights
+        
+    def reset_state(self, batch_size):
+        return tf.zeros((batch_size, self.units))
+
+
+
+class TranslayerDecoder2(tf.keras.Model):
+    def __init__(self, num_layers, embedding_dim, units, num_heads ,dff , vocab_size):
+        super(TranslayerDecoder2, self).__init__()
+        self.units = units
+
+        self.decoder = Decoder( num_layers = num_layers, 
+                                d_model = embedding_dim,
+                                num_heads= num_heads,
+                                dff = dff,
+                                target_vocab_size = vocab_size,
+                                maximum_position_encoding = 512
+                                )
+        self.fc1 = tf.keras.layers.Dense(self.units)
+        self.fc2 = tf.keras.layers.Dense(vocab_size)
+
+        self.transformer_layers = TransformerLayerWrapper(num_layers= num_layers,
+                                                        d_model= embedding_dim,
+                                                        num_heads= num_heads,
+                                                        dff = dff,
+                                                        use_image= True
+                                                        )
+
+    def call(self, x, features , look_ahead_mask, dec_padding_mask):
+        # defining attention as a separate model
+        features, _ = self.transformer_layers(features, training = True)
+
+        dec_output, attention_weights = self.decoder(x, features,True,look_ahead_mask, dec_padding_mask)
+
+        # shape == (batch_size, max_length, hidden_size)
+        x = self.fc1(dec_output)
+
+        # output shape == (batch_size * max_length, vocab)
+        x = self.fc2(x)
+
+        return x, attention_weights
         
     def reset_state(self, batch_size):
         return tf.zeros((batch_size, self.units))
