@@ -16,4 +16,4 @@ attention_features_shape = 81
 data_path = '../../xraydata/padchest'
 EPOCHS = 20
 print_every = 4000
-max_length = 173
+max_length = 100

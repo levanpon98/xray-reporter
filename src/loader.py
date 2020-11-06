@@ -1,4 +1,5 @@
 import os
+import pickle 
 
 import pandas as pd
 import tensorflow as tf
@@ -57,5 +58,9 @@ def load_data(data_path):
 
     train_ds, max_length_train = load_ds(train_images, train_texts, tokenizer)
     valid_ds, max_length_valid = load_ds(valid_images, valid_texts, tokenizer)
+
+    print("Save tokenizer")
+    with open('tokenizer2.pickle', 'wb') as f:
+        pickle.dump(tokenizer, f)
 
     return train_ds, valid_ds, len(train_images), len(valid_images), tokenizer

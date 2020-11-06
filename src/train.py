@@ -124,7 +124,7 @@ if __name__ == '__main__':
             total_loss += batch_loss
             # pb_i.add(config.BATCH_SIZE, values=[('total loss', total_loss)])
             # pb_i.add(config.BATCH_SIZE, values=[('batch loss', batch_loss)])
-            if batch % config.print_every:
+            if batch % config.print_every == 0:
                 print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
         print("End epoch",epoch + 1)
         print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))
@@ -134,7 +134,7 @@ if __name__ == '__main__':
         for (batch, (img_tensor, target)) in enumerate(valid_ds):
             batch_loss ,loss_per_word = evaluate_step(img_tensor, target)
             total_loss += batch_loss
-            if batch % config.print_every:
+            if batch % config.print_every == 0:
                 print("avg loss = {} ,  total loss = {}".format(total_loss/batch, total_loss))
         print("End epoch",epoch + 1)
         print("avg loss = {} , total loss = {}".format(total_loss/batch, total_loss))

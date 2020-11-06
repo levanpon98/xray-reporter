@@ -11,14 +11,18 @@ import pandas as pd
 
 import config
 from models.encoder import Encoder
-from models.decoder import TranslayerDecoder
+from models.decoder import TranslayerDecoder ,TranslayerDecoder2
 from utils import plot_attention
 from extract_extract_key import get_keyvalue
+from models.utils import create_masks
+
+import nltk
+nltk.download('punkt')
 
 def parser_args():
     parser = argparse.ArgumentParser(description='Inference model')
     parser.add_argument('-i', '--image-dir',
-                        default='/home/minh/work/xraydata/data/images/images_normalized/',
+                        default='/home/minh/work/xraydata/padchest/resized',
                         metavar='image_path', type=str, help='path of image')
     parser.add_argument('-plot',
                         default=False, type=bool, help='Plot attention option')
@@ -32,10 +36,12 @@ def parser_args():
 def main():
     args = parser_args()
 
-    with open('tokenizer.pickle', 'rb') as handle:
+    print("Get tokenizer")
+    with open('tokenizer2.pickle', 'rb') as handle:
         tokenizer = pickle.load(handle)
+    print(len(tokenizer.word_counts))
     encoder = Encoder(config.embedding_dim)
-    decoder = TranslayerDecoder(num_layers=config.num_layers,
+    decoder = TranslayerDecoder2(num_layers=config.num_layers,
                                 embedding_dim=config.embedding_dim,
                                 units=config.units,
                                 num_heads=config.num_heads,
@@ -43,7 +49,7 @@ def main():
                                 vocab_size=config.vocab_size)
     optimizer = tf.keras.optimizers.Adam()
 
-    checkpoint_path = "../checkpoints/"
+    checkpoint_path = config.data_path + "/checkpoints/"
     ckpt = tf.train.Checkpoint(encoder=encoder,
                                decoder=decoder,
                                optimizer=optimizer)
@@ -59,11 +65,14 @@ def main():
         features = encoder(img)
 
         dec_input = tf.expand_dims([tokenizer.word_index['<start>']], 0)
-        hidden = decoder.reset_state(batch_size=1)
-
+        
         for i in range(config.max_length):
-            predictions, hidden, attention_weights = decoder(dec_input, features, hidden)
-            attention_plot[i] = tf.reshape(attention_weights, (-1,)).numpy()
+            combined_mask, dec_padding_mask = create_masks(dec_input)
+
+            predictions , attention_weights = decoder(dec_input, features ,combined_mask ,dec_padding_mask)
+
+            predictions = predictions[: ,-1:, :]  # (batch_size, 1, vocab_size)
+            predictions = tf.reshape(predictions , [1,-1])
             predicted_id = tf.random.categorical(predictions, 1)[0][0].numpy()
             try:
                 text.append(tokenizer.index_word[predicted_id])
@@ -73,11 +82,9 @@ def main():
                 print('OOV')
                 text.append('<oov>')
             
+            dec_input = tf.concat([dec_input, tf.expand_dims(tf.cast(tf.argmax(predictions, axis=-1), tf.int32),0)], axis=-1)
 
-            dec_input = tf.expand_dims([predicted_id], 0)
-
-        attention_plot = attention_plot[:len(text), :]
-        return text, attention_plot
+        return text, attention_weights
     # for image_path in glob.glob(os.path.join(args.image_dir, '*.png')):
     #     print(image_path)
     #     image = cv2.imread(image_path)
@@ -93,9 +100,9 @@ def main():
     #         plot_attention(image, result, plot)
     #     print('Predict: ', ' '.join(result))
     
-    labels = pd.read_csv("./data.csv")
-    filenames = labels['filename'].tolist()[:50]
-    labels = labels['findings'].tolist()[:50]
+    labels = pd.read_csv(config.data_path + "/data.csv")
+    filenames = labels['ImageID'].tolist()[:50]
+    labels = labels['Report'].tolist()[:50]
     preds = []
     start = time.time()
     for filename in filenames:
